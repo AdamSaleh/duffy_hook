@@ -1,0 +1,100 @@
+[tool.poetry]
+name = "duffy_hook"
+version = "0.0.0a1"
+description = "Web hook for CentOS CI provisioner"
+authors = ["Adam Saleh <asaleh@redhat.com>"]
+license = "MIT"
+maintainers = ["Adam Saleh <asaleh@redhat.com>"]
+readme = "README.md"
+homepage = "https://github.com/adamsaleh/duffy_hook"
+repository = "https://github.com/adamsaleh/duffy_hook"
+documentation = "https://github.com/adamsaleh/duffy_hook/wiki"
+keywords = ["baremetal", "ci", "vm", "webhook", "centos"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: Ansible",
+    "Framework :: AsyncIO",
+    "Framework :: Celery",
+    "Framework :: FastAPI",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Operating System",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+PyYAML = "^6"
+click = "^8.0.3"
+fastapi = ">=0.70"
+uvicorn = ">=0.15"
+Jinja2 = {version = "^3.0.3", optional = true}
+ansible-runner = {version = "^2.1.1", optional = true}
+asyncpg = {version = "^0.25", optional = true}
+celery = {version = "^5.2.1", extras = ["redis"]}
+httpx = {version = ">=0.18.2", optional = true}
+ipython = {version = ">=7.29", optional = true}
+jmespath = {version = ">=0.10", optional = true}
+pottery = {version = "^3", optional = true}
+psycopg2 = {version = "^2.9.2", optional = true}
+aiodns = {version = "^3.0.0", optional = true}
+
+[tool.poetry.dev-dependencies]
+Jinja2 = "^3.0.3"
+ansible = "^5.2"
+ansible-core = "^2.12.1"
+ansible-runner = "^2.1.1"
+black = ">=21.9b0"
+fastapi = {version = ">=0.70", extras = ["test"]}
+flake8 = ">=3.9.2"
+httpx = ">=0.18.2"
+isort = "^5.9.3"
+jmespath = ">=0.10"
+poetry = "^1.1.13"
+pottery = "^3"
+pytest = ">=6.2.5"
+pytest-asyncio = ">=0.16"
+pytest-black = "^0.3.12"
+pytest-cov = "^3"
+pytest-flake8 = "^1.0.7"
+pytest-isort = ">=2"
+tox = "^3.24.4"
+
+[tool.poetry.extras]
+# keep this in sync with the real extras
+all = [
+    "ipython",
+    "psycopg2", "asyncpg",
+    "aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery",
+    "httpx",
+]
+interactive = ["ipython"]
+tasks = ["aiodns", "ansible-runner", "Jinja2", "jmespath", "pottery"]
+legacy = ["httpx"]
+
+[tool.pytest.ini_options]
+addopts = "--black --cov-config .coveragerc --cov=duffy --cov-report term --cov-report xml --cov-report html --flake8 --isort"
+flake8-max-line-length = 100
+
+[tool.isort]
+line_length = 100
+profile = "black"
+
+[tool.black]
+line-length = 100
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
