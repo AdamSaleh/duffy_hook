@@ -16,8 +16,10 @@ def read_item(item_id: int, q: Optional[str] = None):
 
 
 
-@app.api_route("/echo", methods=["GET", "POST", "DELETE"])
+@app.api_route("/hook", methods=["GET", "POST", "DELETE"])
 async def test(request):
     json = await request.json()
-    return {"method": request.method, "body": json}
+
+    print {"method": request.method, "body": json}
+    return {}
 
