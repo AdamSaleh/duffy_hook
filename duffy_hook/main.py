@@ -27,7 +27,11 @@ async def receive_payload(
 
     if x_github_event == "ping":
         return {"message": "pong"}
-
+    if x_github_event == "workflow_job":
+        payload = await request.json()
+        labels = payload['workflow_job']['labels']
+        if 'stream-8' in labels:
+            pass
     else:
         try:
             payload = await request.json()
