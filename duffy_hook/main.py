@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 import uvicorn
-from cicoclient import CicoWrapper
+from cicoclient.wrapper import CicoWrapper
 from fastapi import FastAPI
 from fastapi import Header
 from fastapi import Request
