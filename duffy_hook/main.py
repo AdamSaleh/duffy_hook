@@ -1,10 +1,18 @@
+import os
 from typing import Optional
 
 import uvicorn
+from cicoclient import CicoWrapper
 from fastapi import FastAPI
 from fastapi import Header
 from fastapi import Request
+
 app = FastAPI()
+
+api = CicoWrapper(
+            endpoint="http://admin.ci.centos.org:8080/",
+            api_key=os.environ.get("CICO_API_KEY"),
+)
 
 
 @app.get('/')
@@ -31,7 +39,19 @@ async def receive_payload(
         payload = await request.json()
         labels = payload['workflow_job']['labels']
         if 'stream-8' in labels:
-            pass
+            print("Request with labels:", labels)
+#            hosts, ssid = api.node_get(
+#                arch="x86_64",
+#                ver="8-stream",
+#                count=1,
+#                retry_count=2,
+#                retry_interval=30)
+# {'n63.pufty': {'host_id': 127, 'hostname': 'n63.pufty',
+# 'ip_address': '172.19.3.127', 'chassis': 'pufty',
+# 'used_count': 4411, 'current_state': 'Deployed',
+# 'comment': '6f76948a', 'distro': None, 'rel': None,
+# 'centos_version': '8-stream', 'architecture': 'x86_64',
+# 'node_pool': 1, 'console_port': 2620, 'flavor': None}}
     else:
         try:
             payload = await request.json()
