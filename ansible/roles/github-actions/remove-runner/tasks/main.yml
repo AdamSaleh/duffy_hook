@@ -1,0 +1,40 @@
+---
+- name: Network Getting Started First Playbook
+  gather_facts: false
+  hosts: all
+  tasks:
+
+    - name: Get Token
+      uri:
+        url: "{{ github_runner_remove_url }}"
+        user: "{{ github_user }}"
+        password: "{{ github_token }}"
+        method: POST
+        force_basic_auth: yes
+        status_code: [200, 201, 202]
+      register: response
+
+    - name: Print returned json dictionary
+      debug:
+        var: response
+
+    - name: Install as service
+      become: true
+      become_user: runner
+      ansible.builtin.command: sudo ./svc.sh stop
+      args:
+        chdir: /opt/actions-runner
+
+    - name: Install as service
+      become: true
+      become_user: runner
+      ansible.builtin.command: sudo ./svc.sh uninstall
+      args:
+        chdir: /opt/actions-runner
+
+    - name: Run the removal
+      become: true
+      become_user: runner
+      ansible.builtin.command: ./config.sh remove --token {{ response.json.token }}
+      args:
+        chdir: /opt/actions-runner

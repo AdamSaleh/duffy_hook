@@ -1,0 +1,98 @@
+---
+- tags:
+    - github-actions-register
+  block:
+    - name: Allow 'wheel' group to have passwordless sudo
+      become: true
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+    - name: Add the user for github runner
+      ansible.builtin.user:
+        name: runner
+        comment: Action Runner
+        uid: 1040
+        group: wheel
+      become: true
+
+    - name: Create directory
+      ansible.builtin.file:
+        path: /opt/actions-runner
+        state: directory
+        owner: runner
+        group: wheel
+      become: true
+
+    - name: Download the tar
+      ansible.builtin.get_url:
+        url: https://github.com/actions/runner/releases/download/v2.291.1/actions-runner-linux-x64-2.291.1.tar.gz
+        dest: /opt/actions-runner/actions-runner.tar.gz
+      become: true
+      become_user: runner
+
+    - name: Get sha256 sum of the tar
+      stat:
+        path: /opt/actions-runner/actions-runner.tar.gz
+        checksum_algorithm: sha256
+        get_checksum: yes
+      register: shell_stat
+      become: true
+      become_user: runner
+
+    - name: Verify sha256sum of script before execution.
+      fail:
+        msg: "Failure, file is not correct."
+      when: shell_stat.stat.checksum != '1bde3f2baf514adda5f8cf2ce531edd2f6be52ed84b9b6733bf43006d36dcd4c'
+
+    - name: Untar the archive
+      become: true
+      become_user: runner
+      ansible.builtin.unarchive:
+        src: /opt/actions-runner/actions-runner.tar.gz
+        dest: /opt/actions-runner/
+        remote_src: yes
+
+    - name: Run the preinstall
+      become: true
+      become_user: runner
+      ansible.builtin.command: sudo ./bin/installdependencies.sh
+      args:
+        chdir: /opt/actions-runner
+
+    - name: Get Token
+      uri:
+        url: "{{ github_runner_registration_url }}"
+        user: "{{ github_user }}"
+        password: "{{ github_token }}"
+        method: POST
+        force_basic_auth: yes
+        status_code: [200, 201, 202]
+      register: response
+
+    - name: Print returned json dictionary
+      debug:
+        var: response
+
+    - name: Run the config
+      become: true
+      become_user: runner
+      ansible.builtin.command: ./config.sh --unattended --url {{ github_runner_config_url }} --token {{ response.json.token }}
+      args:
+        chdir: /opt/actions-runner
+
+    - name: Install as service
+      become: true
+      become_user: runner
+      ansible.builtin.command: sudo ./svc.sh install
+      args:
+        chdir: /opt/actions-runner
+
+    - name: Run as service
+      become: true
+      become_user: runner
+      ansible.builtin.command: sudo ./svc.sh start
+      args:
+        chdir: /opt/actions-runner
