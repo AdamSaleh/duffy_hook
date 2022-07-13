@@ -1,8 +1,10 @@
+import json
 import os
 from typing import Optional
 
 import uvicorn
 from cicoclient.wrapper import CicoWrapper
+from execute_ansible import execute_playbook
 from fastapi import FastAPI
 from fastapi import Header
 from fastapi import Request
@@ -40,12 +42,28 @@ async def receive_payload(
         labels = payload['workflow_job']['labels']
         if 'stream-8' in labels:
             print("Request with labels:", labels)
-#            hosts, ssid = api.node_get(
-#                arch="x86_64",
-#                ver="8-stream",
-#                count=1,
-#                retry_count=2,
-#                retry_interval=30)
+
+            hosts, ssid = api.node_get(
+                arch="x86_64",
+                ver="8-stream",
+                count=1,
+                retry_count=2,
+                retry_interval=30,
+            )
+
+            host = hosts.values()[0]
+            extra_vars = {}
+            with open('/opt/ansible_config.json') as fs:
+                extra_vars = json.load(fs)
+            extra_vars["github_runner_labels"] = ",".join(labels)
+
+            result = execute_playbook(
+                inventory_string=f"{host['ip_address']},",
+                extra_vars=extra_vars,
+                playbook_path="./ansible/register-runner.yml",
+            )
+            print(result)
+
 # {'n63.pufty': {'host_id': 127, 'hostname': 'n63.pufty',
 # 'ip_address': '172.19.3.127', 'chassis': 'pufty',
 # 'used_count': 4411, 'current_state': 'Deployed',
@@ -60,6 +78,17 @@ async def receive_payload(
             print("Couldn't get payload:", e)
 
         return {"message": "Unable to process action"}
+
+
+@app.get("/nodes")
+async def get_nodes():
+    nodes = api.inventory()
+    return nodes
+
+
+@app.delete("/node/{ssid}")
+async def remove_node(ssid):
+    api.node_done(ssid)
 
 
 if __name__ == "__main__":

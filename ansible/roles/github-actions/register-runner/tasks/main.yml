@@ -79,7 +79,7 @@
     - name: Run the config
       become: true
       become_user: runner
-      ansible.builtin.command: ./config.sh --unattended --url {{ github_runner_config_url }} --token {{ response.json.token }}
+      ansible.builtin.command: ./config.sh --unattended --url {{ github_runner_config_url }} --token {{ response.json.token }} --labels {{ github_runner_labels }}
       args:
         chdir: /opt/actions-runner
 

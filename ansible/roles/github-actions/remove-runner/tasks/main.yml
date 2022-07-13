@@ -1,9 +1,7 @@
 ---
-- name: Network Getting Started First Playbook
-  gather_facts: false
-  hosts: all
-  tasks:
-
+- tags:
+    - github-actions-remove
+  block:
     - name: Get Token
       uri:
         url: "{{ github_runner_remove_url }}"
@@ -18,17 +16,19 @@
       debug:
         var: response
 
-    - name: Install as service
+    - name: Stop the service
       become: true
       become_user: runner
       ansible.builtin.command: sudo ./svc.sh stop
+      ignore_errors: true
       args:
         chdir: /opt/actions-runner
 
-    - name: Install as service
+    - name: Uninstall as service
       become: true
       become_user: runner
       ansible.builtin.command: sudo ./svc.sh uninstall
+      ignore_errors: true
       args:
         chdir: /opt/actions-runner
 

@@ -1,0 +1,5 @@
+---
+- hosts: all
+  name: Register the ansible runner
+  roles:
+  - role: github-actions/remove-runner
