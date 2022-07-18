@@ -17,6 +17,31 @@ api = CicoWrapper(
 )
 
 
+def enroll_duffy_as_action(labels, version="8-stream"):
+    print("Request with labels:", labels)
+
+    hosts, ssid = api.node_get(
+        arch="x86_64",
+        ver=version,
+        count=1,
+        retry_count=2,
+        retry_interval=30,
+    )
+
+    host = hosts.values()[0]
+    extra_vars = {}
+    with open('/etc/duffy-hook/ansible_config.json') as fs:
+        extra_vars = json.load(fs)
+    extra_vars["github_runner_labels"] = ",".join(labels)
+
+    result = execute_playbook(
+        inventory_string=f"{host['ip_address']},",
+        extra_vars=extra_vars,
+        playbook_path="./ansible/register-runner.yml",
+    )
+    print(result)
+
+
 @app.get('/')
 def read_root():
     return {'Hello': 'World'}
@@ -25,6 +50,11 @@ def read_root():
 @app.get('/items/{item_id}')
 def read_item(item_id: int, q: Optional[str] = None):
     return {'item_id': item_id, 'q': q}
+
+
+@app.post("/enroll/{label}/{version}")
+async def receive_enroll_duffy(label, version):
+    enroll_duffy_as_action([label], version)
 
 
 @app.post("/webhook/{app_name}")
@@ -41,29 +71,7 @@ async def receive_payload(
         payload = await request.json()
         labels = payload['workflow_job']['labels']
         if 'stream-8' in labels:
-            print("Request with labels:", labels)
-
-            hosts, ssid = api.node_get(
-                arch="x86_64",
-                ver="8-stream",
-                count=1,
-                retry_count=2,
-                retry_interval=30,
-            )
-
-            host = hosts.values()[0]
-            extra_vars = {}
-            with open('/opt/ansible_config.json') as fs:
-                extra_vars = json.load(fs)
-            extra_vars["github_runner_labels"] = ",".join(labels)
-
-            result = execute_playbook(
-                inventory_string=f"{host['ip_address']},",
-                extra_vars=extra_vars,
-                playbook_path="./ansible/register-runner.yml",
-            )
-            print(result)
-
+            enroll_duffy_as_action(labels, "8-stream")
 # {'n63.pufty': {'host_id': 127, 'hostname': 'n63.pufty',
 # 'ip_address': '172.19.3.127', 'chassis': 'pufty',
 # 'used_count': 4411, 'current_state': 'Deployed',
