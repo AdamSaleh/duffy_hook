@@ -27,8 +27,13 @@ def enroll_duffy_as_action(labels, version="8-stream"):
         retry_count=2,
         retry_interval=30,
     )
-
-    host = hosts.values()[0]
+    host = None
+    print(hosts)
+    for k in hosts:
+        host = hosts[k]
+        break
+    if not host:
+        return None
     extra_vars = {}
     with open('/etc/duffy-hook/ansible_config.json') as fs:
         extra_vars = json.load(fs)
@@ -39,7 +44,7 @@ def enroll_duffy_as_action(labels, version="8-stream"):
         extra_vars=extra_vars,
         playbook_path="./ansible/register-runner.yml",
     )
-    print(result)
+    return result
 
 
 @app.get('/')
