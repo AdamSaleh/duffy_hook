@@ -1,5 +1,5 @@
 FROM fedora:35
-RUN dnf -y install python3-uvicorn ansible python3-fastapi python3-pip
+RUN dnf -y install openssh-clients python3-uvicorn ansible python3-fastapi python3-pip
 RUN pip install python-cicoclient paramiko
 WORKDIR /opt
 COPY . /opt/duffy_hook
