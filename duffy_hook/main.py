@@ -58,7 +58,11 @@ def clear_counts(config):
 def make_sure__there_is_enough_nodes(config):
     # get current nodes
     nodes = api.inventory()
+    print("Node info - basic:")
+    print(nodes)
     nodes = update_nodes_github_runner_info(nodes)
+    print("Node info - with runers:")
+    print(nodes)
     clear_counts(config)
     # make each node counted in the project
     for n in nodes:
@@ -67,11 +71,18 @@ def make_sure__there_is_enough_nodes(config):
             v = node['centos_version']
             if v in config[running]['version']:
                 config[running]['version'][v]['current_count'] += 1
-
+    print("Config with counts")
+    print(config)
     # for each project
     for k in config:
         for v in config[k]['versions']:
             if config[k][v]['current_count'] < config[k][v]['min_count']:
+                print("Setting up:")
+                print(
+                    config[k][v],
+                    config[k][v]['labels'],
+                    version=v,
+                )
                 config[k][v]["runner_slug"] = k
                 enroll_duffy_as_action(
                     config[k][v], config[k][v]['labels'],
@@ -82,8 +93,11 @@ def make_sure__there_is_enough_nodes(config):
 @app.on_event("startup")
 def schedule_there_is_enough_nodes() -> None:
     config = {}
+    print("Scheduling")
     with open('/etc/duffy-hook/ansible_config.json') as fs:
         config = json.load(fs)
+    print(config)
+    make_sure__there_is_enough_nodes(config)
     schedule.every(10).minutes.do(make_sure__there_is_enough_nodes, config)
 
     while True:
@@ -96,6 +110,16 @@ def read_root():
     return {'Hello': 'World'}
 
 
+@app.post("/check_nodes")
+def hook_there_is_enough_nodes() -> None:
+    config = {}
+    print("Scheduling")
+    with open('/etc/duffy-hook/ansible_config.json') as fs:
+        config = json.load(fs)
+    print(config)
+    make_sure__there_is_enough_nodes(config)
+
+
 @app.get('/items/{item_id}')
 def read_item(item_id: int, q: Optional[str] = None):
     return {'item_id': item_id, 'q': q}
@@ -106,7 +130,7 @@ async def receive_enroll_duffy(app_name, label, version):
     extra_vars = {}
     with open('/etc/duffy-hook/ansible_config.json') as fs:
         extra_vars = json.load(fs)
-    enroll_duffy_as_action(extra_vars[app_name], [label], version)
+    enroll_duffy_as_action(extra_vars[app_name][version], [label], version)
 
 
 @app.post("/webhook/{app_name}")
@@ -116,6 +140,9 @@ async def receive_payload(
     x_github_event: str = Header(...),
 ):
     print("event:", x_github_event)
+    extra_vars = {}
+    with open('/etc/duffy-hook/ansible_config.json') as fs:
+        extra_vars = json.load(fs)
 
     if x_github_event == "ping":
         return {"message": "pong"}
@@ -123,7 +150,9 @@ async def receive_payload(
         payload = await request.json()
         labels = payload['workflow_job']['labels']
         if 'stream-8' in labels:
-            enroll_duffy_as_action(app_name, labels, "8-stream")
+            enroll_duffy_as_action(
+                extra_vars[app_name]['8-stream'], labels, "8-stream",
+            )
 # {'n63.pufty': {'host_id': 127, 'hostname': 'n63.pufty',
 # 'ip_address': '172.19.3.127', 'chassis': 'pufty',
 # 'used_count': 4411, 'current_state': 'Deployed',
