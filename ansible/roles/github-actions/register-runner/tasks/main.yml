@@ -2,6 +2,10 @@
 - tags:
     - github-actions-register
   block:
+    - name: Add a tmp flag file, that will signify this is in progress
+      ansible.builtin.command: echo {{ runner_slug }} > runner_queued
+      args:
+        chdir: /tmp
     - name: Allow 'wheel' group to have passwordless sudo
       become: true
       lineinfile:
@@ -96,3 +100,7 @@
       ansible.builtin.command: sudo ./svc.sh start
       args:
         chdir: /opt/actions-runner
+    - name: Remove a tmp flag file, that will signify this is already running
+      ansible.builtin.command: mv runner_queued runer_running
+      args:
+        chdir: /tmp
